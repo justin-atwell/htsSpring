@@ -1,4 +1,10 @@
-# Logs
+# generated files
+build/
+bin/
+
+# gradle cache
+.gradle/
+
 logs
 *.log
 npm-debug.log*
