@@ -1,28 +1,23 @@
 package hedera.starter.controller;
 
-import com.hedera.hashgraph.sdk.AccountCreateTransaction;
-import com.hedera.hashgraph.sdk.AccountId;
-import com.hedera.hashgraph.sdk.Client;
-import com.hedera.hashgraph.sdk.Hbar;
-import com.hedera.hashgraph.sdk.PrivateKey;
-import com.hedera.hashgraph.sdk.Transaction;
-import com.hedera.hashgraph.sdk.TransactionReceipt;
-import com.hedera.hashgraph.sdk.TransactionResponse;
-import com.hedera.hashgraph.sdk.TransferTransaction;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.hedera.hashgraph.sdk.*;
 import io.github.cdimascio.dotenv.Dotenv;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Objects;
+import java.util.concurrent.TimeoutException;
 
-public final class AccountController {
-
+@RestController
+@RequestMapping(path = "/account")
+public class AccountController {
     private static final AccountId OPERATOR_ID = AccountId.fromString(Objects.requireNonNull(Dotenv.load().get("OPERATOR_ID")));
     private static final PrivateKey OPERATOR_KEY = PrivateKey.fromString(Objects.requireNonNull(Dotenv.load().get("OPERATOR_KEY")));
 
-    private AccountController() {
-    }
-
-    public static void main(String[] args) throws Exception {
-
+    @GetMapping("")
+    public AccountId getAccountInfo() throws PrecheckStatusException, TimeoutException, ReceiptStatusException, InvalidProtocolBufferException {
         Client client = Client.forTestnet();
         client.setOperator(OPERATOR_ID, OPERATOR_KEY);
 
@@ -34,10 +29,8 @@ public final class AccountController {
                 .execute(client).getReceipt(client).accountId;
 
         System.out.println("Submitting transaction");
-//        TransactionId transactionId = TransactionId.generate(Justin);
 
         TransferTransaction transaction = new TransferTransaction()
-//            .setTransactionId(transactionId)
                 .addHbarTransfer(userId, new Hbar(-1))
                 .addHbarTransfer(OPERATOR_ID, new Hbar(1))
                 .freezeWith(client)
@@ -53,11 +46,18 @@ public final class AccountController {
         transaction1.sign(userKey);
 
         Client client2 = Client.forTestnet();
-        TransactionResponse response = (TransactionResponse) transaction1.execute(client2);
+        TransactionResponse response = transaction1.execute(client2);
         System.out.println("Getting receipt");
 
         // assuming I'm the end user here
         TransactionReceipt receipt = response.getReceipt(client2);
-//        System.out.println("Transaction id " + transactionId.toString());
+        System.out.println("Transaction id " + receipt.status);
+
+        return userId;
     }
+
+    static Dotenv getEnv() {
+        return Dotenv.load();
+    }
+
 }
