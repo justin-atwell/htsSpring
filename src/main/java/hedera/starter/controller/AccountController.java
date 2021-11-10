@@ -37,27 +37,21 @@ public class AccountController {
                 .sign(OPERATOR_KEY);
 
         byte[] transBytes = transaction.toBytes();
-        // 3rd act send bytes to client
-        // client could either sign the bytes and return signature to 3rd act who submit to hedera
-        // client signs and submits to hedera
+        // The transaction bytes are sent to the client.
+        // The client could sign the bytes and return the signature to the application
+        // or the client could sign the bytes and submit them to the Hedera network.
 
         Transaction<?> transaction1 = Transaction.fromBytes(transBytes);
-
         transaction1.sign(userKey);
+        //these lines represent a given user (created above) signing a TransferTransaction
 
         Client client2 = Client.forTestnet();
         TransactionResponse response = transaction1.execute(client2);
         System.out.println("Getting receipt");
 
-        // assuming I'm the end user here
         TransactionReceipt receipt = response.getReceipt(client2);
         System.out.println("Transaction id " + receipt.status);
 
         return userId;
     }
-
-    static Dotenv getEnv() {
-        return Dotenv.load();
-    }
-
 }
