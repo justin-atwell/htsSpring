@@ -1,57 +1,56 @@
 package hedera.starter.controller;
 
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.hedera.hashgraph.sdk.*;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 
 @RestController
 @RequestMapping(path = "/account")
 public class AccountController {
-    private static final AccountId OPERATOR_ID = AccountId.fromString(Objects.requireNonNull(Dotenv.load().get("OPERATOR_ID")));
-    private static final PrivateKey OPERATOR_KEY = PrivateKey.fromString(Objects.requireNonNull(Dotenv.load().get("OPERATOR_KEY")));
+
+    PrivateKey OPERATOR_KEY = PrivateKey.fromString(Objects.requireNonNull(Dotenv.load().get("OPERATOR_KEY")));
 
     @GetMapping("")
-    public AccountId getAccountInfo() throws PrecheckStatusException, TimeoutException, ReceiptStatusException, InvalidProtocolBufferException {
+    public AccountId getAccountInfo() throws PrecheckStatusException, TimeoutException, ReceiptStatusException {
+        AccountId OPERATOR_ID = AccountId.fromString(Objects.requireNonNull(Dotenv.load().get("OPERATOR_ID")));
+
         Client client = Client.forTestnet();
         client.setOperator(OPERATOR_ID, OPERATOR_KEY);
 
-        PrivateKey userKey = PrivateKey.generate();
+        TopicCreateTransaction topicCreateTransaction = new TopicCreateTransaction();
 
-        AccountId userId = new AccountCreateTransaction()
-                .setKey(userKey.getPublicKey())
-                .setInitialBalance(new Hbar(5))
-                .execute(client).getReceipt(client).accountId;
+        TransactionResponse response = topicCreateTransaction.execute(client);
+        TransactionReceipt receipt = response.getReceipt(client);
 
-        System.out.println("Submitting transaction");
+        TopicId topicId = receipt.topicId;
 
-        TransferTransaction transaction = new TransferTransaction()
-                .addHbarTransfer(userId, new Hbar(-1))
-                .addHbarTransfer(OPERATOR_ID, new Hbar(1))
-                .freezeWith(client)
-                .sign(OPERATOR_KEY);
+        TopicMessageSubmitTransaction submitMessage = new TopicMessageSubmitTransaction()
+                .setTopicId(topicId)
+                .setMessage("Chicken bacon ranch");
 
-        byte[] transBytes = transaction.toBytes();
-        // The transaction bytes are sent to the client.
-        // The client could sign the bytes and return the signature to the application
-        // or the client could sign the bytes and submit them to the Hedera network.
+        new TopicMessageQuery()
+                .setTopicId(topicId)
+                .subscribe(client, resp -> {
+                    String messageAsString = new String(resp.contents, StandardCharsets.UTF_8);
+                    System.out.println(resp.consensusTimestamp + " received topic message: " + messageAsString);
+                });
 
-        Transaction<?> transaction1 = Transaction.fromBytes(transBytes);
-        transaction1.sign(userKey);
-        //these lines represent a given user (created above) signing a TransferTransaction
+        return OPERATOR_ID;
+    }
 
-        Client client2 = Client.forTestnet();
-        TransactionResponse response = transaction1.execute(client2);
-        System.out.println("Getting receipt");
+    private Function<byte[],byte[]> generateSignatureFunction() {
+        // Retrieve the Private Key from the .env file
 
-        TransactionReceipt receipt = response.getReceipt(client2);
-        System.out.println("Transaction id " + receipt.status);
-
-        return userId;
+        // return a function that will sign the byte array transaction during the signWith method
+        return (
+                t -> OPERATOR_KEY.sign(t)
+        );
     }
 }
