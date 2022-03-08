@@ -26,6 +26,7 @@ public final class AccountController {
         Client client = Client.forTestnet();
         client.setOperator(OPERATOR_ID, OPERATOR_KEY);
 
+        
         PrivateKey userKey = PrivateKey.generate();
 
         AccountId userId = new AccountCreateTransaction()
