@@ -1,9 +1,7 @@
-# generated files
-build/
-bin/
 
 # gradle cache
-.gradle/
+.gradle
+/build/
 
 logs
 *.log

@@ -10,7 +10,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:2.3.2.RELEASE")
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:3.2.5")
     }
 }
 
@@ -21,7 +21,7 @@ apply plugin: 'java'
 
 group 'com.hederaConsensusTesting'
 version '1.0-SNAPSHOT'
-sourceCompatibility = '11'
+sourceCompatibility = '18'
 
 repositories {
     mavenCentral()
@@ -31,13 +31,12 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation group: 'com.hedera.hashgraph', name: 'sdk', version: '2.1.0'
+    implementation group: 'com.hedera.hashgraph', name: 'sdk', version: '2.30.0'
 
     implementation "io.github.cdimascio:java-dotenv:5.2.2"
-    implementation "io.grpc:grpc-netty-shaded:1.24.0"
-    implementation group: 'org.springdoc', name: 'springdoc-openapi-ui', version: '1.5.8'
+    implementation "io.grpc:grpc-netty-shaded:1.28.1"
 
-    testCompile group: 'junit', name: 'junit'
+    testImplementation 'junit:junit'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
 }
